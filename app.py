@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import numpy as np
+import time
 from utils.data_loader import load_data
 from utils.data_validator import validate_data
 from analytics.descriptive import perform_descriptive_analytics
@@ -15,6 +16,7 @@ st.set_page_config(
     page_title="Comprehensive Data Analytics Platform",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # Initialize session state variables
@@ -35,10 +37,46 @@ def reset_app():
     st.session_state.current_tab = "upload"
 
 def main():
-    st.title("Comprehensive Data Analytics Platform")
-    st.write("Upload your data and get insights across five analytics dimensions")
+    # Add custom CSS for responsive design
+    st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
     
-    # Sidebar for navigation
+    .main .block-container {
+        max-width: 100%;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    h1, h2, h3 {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stButton button {
+        width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+        .row-widget.stRadio > div {
+            flex-direction: column;
+        }
+        
+        .row-widget.stRadio > div > label {
+            margin-bottom: 0.5rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Application header with responsive design
+    st.title("Comprehensive Data Analytics Platform")
+    st.markdown("<p style='margin-bottom: 1rem;'>Upload your data and get insights across five analytics dimensions</p>", unsafe_allow_html=True)
+    
+    # Sidebar for navigation with improved styling
     with st.sidebar:
         st.header("Navigation")
         
@@ -56,14 +94,21 @@ def main():
         else:
             tabs = {"upload": "📂 Upload Data"}
         
+        # Create buttons with improved styling
         for tab_id, tab_name in tabs.items():
-            if st.button(tab_name, key=f"btn_{tab_id}"):
+            # Highlight the current tab
+            button_style = "primary" if st.session_state.current_tab == tab_id else "secondary"
+            if st.button(tab_name, key=f"btn_{tab_id}", type=button_style):
                 st.session_state.current_tab = tab_id
         
         st.divider()
-        if st.button("🔄 Reset Application"):
-            reset_app()
-            st.rerun()
+        
+        # Settings and controls
+        with st.expander("Settings"):
+            st.caption("Reset the application to upload new data")
+            if st.button("🔄 Reset Application", type="danger"):
+                reset_app()
+                st.rerun()
     
     # Main content area
     if st.session_state.current_tab == "upload":
@@ -84,35 +129,73 @@ def main():
 def render_upload_tab():
     st.header("Data Upload")
     
-    with st.expander("Upload Instructions", expanded=not st.session_state.file_uploaded):
-        st.markdown("""
-        ### How to upload your data
-        1. Prepare your data file in CSV or Excel (XLSX) format
-        2. Click the 'Browse files' button below
-        3. Select your file from your computer
-        4. The system will automatically validate your data
-        5. Once validated, you can explore different analytics views
+    # Use columns for a more responsive layout
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        with st.expander("Upload Instructions", expanded=not st.session_state.file_uploaded):
+            st.markdown("""
+            ### How to upload your data
+            1. Prepare your data file in CSV or Excel (XLSX) format
+            2. Click the 'Browse files' button below
+            3. Select your file from your computer
+            4. The system will automatically validate your data
+            5. Once validated, you can explore different analytics views
+            
+            **Note**: Your data should have headers in the first row and be well-structured for best results
+            """)
         
-        **Note**: Your data should have headers in the first row and be well-structured for best results
-        """)
+        # Add a container with custom styling for the uploader
+        with st.container():
+            st.markdown("""
+            <style>
+            .uploadedFile {
+                width: 100% !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+            
+            # Show supported file types
+            st.caption("Supported formats: CSV (.csv) and Excel (.xlsx)")
     
-    uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+    with col2:
+        # Information card about the platform
+        with st.container():
+            st.markdown("""
+            <div style="padding: 1rem; border-radius: 0.5rem; background-color: #f8f9fa; margin-bottom: 1rem;">
+            <h3 style="margin-top: 0;">📊 Data Analytics Platform</h3>
+            <p>This platform enables you to perform five types of analytics on your data:</p>
+            <ul>
+                <li><strong>Descriptive Analytics:</strong> What happened?</li>
+                <li><strong>Diagnostic Analytics:</strong> Why did it happen?</li>
+                <li><strong>Predictive Analytics:</strong> What might happen?</li>
+                <li><strong>Prescriptive Analytics:</strong> What should be done?</li>
+                <li><strong>Cognitive Analytics:</strong> AI-powered insights</li>
+            </ul>
+            <p>Plus a Work Plan Generator to implement findings.</p>
+            </div>
+            """, unsafe_allow_html=True)
     
+    # Process the uploaded file
     if uploaded_file is not None:
         try:
-            # Load the data
-            df = load_data(uploaded_file)
+            # Show a loading spinner while processing
+            with st.spinner('Processing your data...'):
+                # Load the data
+                df = load_data(uploaded_file)
+                
+                # Store in session state
+                st.session_state.data = df
+                st.session_state.file_uploaded = True
+                
+                # Validate the data
+                st.session_state.validation_results = validate_data(df)
             
-            # Store in session state
-            st.session_state.data = df
-            st.session_state.file_uploaded = True
-            
-            # Validate the data
-            st.session_state.validation_results = validate_data(df)
-            
-            # Display data preview
+            # Display responsive data preview
             st.header("Data Preview")
-            st.dataframe(df.head(10))
+            st.dataframe(df.head(10), use_container_width=True)
             
             # Display validation results
             st.header("Data Validation Results")
@@ -120,21 +203,48 @@ def render_upload_tab():
             if st.session_state.validation_results['is_valid']:
                 st.success("✅ Your data is valid and ready for analysis!")
                 
+                # Data summary with responsive layout
                 st.markdown("### Data Summary")
-                col1, col2 = st.columns(2)
+                
+                # Use more columns for better mobile layout
+                col1, col2, col3 = st.columns([1, 1, 1])
+                
                 with col1:
-                    st.write(f"**Rows:** {df.shape[0]}")
-                    st.write(f"**Columns:** {df.shape[1]}")
-                    st.write(f"**Numeric Features:** {len(st.session_state.validation_results['numeric_columns'])}")
-                    st.write(f"**Categorical Features:** {len(st.session_state.validation_results['categorical_columns'])}")
+                    st.metric("Rows", df.shape[0])
+                    st.metric("Columns", df.shape[1])
                 
                 with col2:
-                    st.write(f"**Date Features:** {len(st.session_state.validation_results['date_columns'])}")
-                    st.write(f"**Missing Values:** {df.isna().sum().sum()} ({df.isna().sum().sum() / (df.shape[0] * df.shape[1]):.2%})")
-                    st.write(f"**Data Types:** {', '.join(df.dtypes.astype(str).unique())}")
+                    st.metric("Numeric Features", len(st.session_state.validation_results['numeric_columns']))
+                    st.metric("Categorical Features", len(st.session_state.validation_results['categorical_columns']))
                 
-                # Proceed to analytics button
-                if st.button("Proceed to Analytics", key="proceed_btn"):
+                with col3:
+                    st.metric("Date Features", len(st.session_state.validation_results['date_columns']))
+                    missing_pct = df.isna().sum().sum() / (df.shape[0] * df.shape[1]) * 100
+                    st.metric("Missing Values", f"{missing_pct:.2f}%")
+                
+                # Information about data types
+                with st.expander("Data Types Information"):
+                    st.write(f"**Data Types:** {', '.join(df.dtypes.astype(str).unique())}")
+                    
+                    if st.session_state.validation_results['numeric_columns']:
+                        st.write("**Numeric Columns:**")
+                        st.write(", ".join(st.session_state.validation_results['numeric_columns']))
+                    
+                    if st.session_state.validation_results['categorical_columns']:
+                        st.write("**Categorical Columns:**")
+                        st.write(", ".join(st.session_state.validation_results['categorical_columns']))
+                    
+                    if st.session_state.validation_results['date_columns']:
+                        st.write("**Date Columns:**")
+                        st.write(", ".join(st.session_state.validation_results['date_columns']))
+                    
+                    if st.session_state.validation_results['text_columns']:
+                        st.write("**Text Columns:**")
+                        st.write(", ".join(st.session_state.validation_results['text_columns']))
+                
+                # Proceed to analytics button - make it stand out
+                st.markdown("<div style='padding: 1rem 0;'></div>", unsafe_allow_html=True)
+                if st.button("✨ Proceed to Analytics", key="proceed_btn", type="primary"):
                     st.session_state.current_tab = "descriptive"
                     st.rerun()
             else:
@@ -142,17 +252,32 @@ def render_upload_tab():
                 for issue in st.session_state.validation_results['issues']:
                     st.warning(issue)
                 
-                st.markdown("""
-                ### Recommendations:
-                - Check for missing values and fill them appropriately
-                - Ensure data types are consistent
-                - Remove duplicates if present
-                - Fix any other highlighted issues and upload again
-                """)
+                with st.container():
+                    st.markdown("""
+                    ### Recommendations:
+                    - Check for missing values and fill them appropriately
+                    - Ensure data types are consistent
+                    - Remove duplicates if present
+                    - Fix any other highlighted issues and upload again
+                    """)
+                    
+                    # Add a retry button
+                    st.button("📤 Upload Another File", key="retry_btn")
                 
         except Exception as e:
             st.error(f"Error processing your file: {str(e)}")
             st.session_state.file_uploaded = False
+            
+            # Display troubleshooting information
+            with st.expander("Troubleshooting Tips"):
+                st.markdown("""
+                - Make sure your file is correctly formatted
+                - Check if the file is not corrupted
+                - Ensure the file has headers in the first row
+                - Try simplifying complex data before uploading
+                """)
+                
+                st.button("Try Again", key="try_again_btn")
 
 def render_descriptive_tab():
     st.header("📊 Descriptive Analytics")
@@ -171,7 +296,27 @@ def render_descriptive_tab():
     if st.session_state.data is not None:
         perform_descriptive_analytics(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 def render_diagnostic_tab():
     st.header("🔍 Diagnostic Analytics")
@@ -190,7 +335,27 @@ def render_diagnostic_tab():
     if st.session_state.data is not None:
         perform_diagnostic_analytics(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary", key="goto_upload_diag"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 def render_predictive_tab():
     st.header("🔮 Predictive Analytics")
@@ -209,7 +374,27 @@ def render_predictive_tab():
     if st.session_state.data is not None:
         perform_predictive_analytics(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary", key="goto_upload_pred"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 def render_prescriptive_tab():
     st.header("🧠 Prescriptive Analytics")
@@ -228,7 +413,27 @@ def render_prescriptive_tab():
     if st.session_state.data is not None:
         perform_prescriptive_analytics(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary", key="goto_upload_pres"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 def render_cognitive_tab():
     st.header("💡 Cognitive Analytics")
