@@ -106,7 +106,7 @@ def main():
         # Settings and controls
         with st.expander("Settings"):
             st.caption("Reset the application to upload new data")
-            if st.button("🔄 Reset Application", type="danger"):
+            if st.button("🔄 Reset Application", type="secondary"):
                 reset_app()
                 st.rerun()
     
@@ -452,7 +452,27 @@ def render_cognitive_tab():
     if st.session_state.data is not None:
         perform_cognitive_analytics(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary", key="goto_upload_cog"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 def render_work_plan_tab():
     st.header("📋 Work Plan Generator")
@@ -471,7 +491,27 @@ def render_work_plan_tab():
     if st.session_state.data is not None:
         generate_work_plan(st.session_state.data, st.session_state.validation_results)
     else:
+        # Enhanced warning with guidance
         st.warning("Please upload a file first.")
+        
+        # Add helpful card with instructions
+        st.markdown("""
+        <div style="padding: 1.5rem; border-radius: 0.5rem; background-color: #f8f9fa; margin: 1rem 0;">
+            <h3 style="margin-top: 0;">How to Get Started</h3>
+            <ol>
+                <li>Go to the <b>Upload Data</b> tab in the sidebar</li>
+                <li>Upload a CSV or Excel file with your data</li>
+                <li>Wait for validation to complete</li>
+                <li>Once validated, return to this tab</li>
+            </ol>
+            <p>Need sample data? Use any CSV or Excel file with numeric and categorical columns.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Quick navigation button
+        if st.button("Go to Upload Tab", type="primary", key="goto_upload_work"):
+            st.session_state.current_tab = "upload"
+            st.rerun()
 
 if __name__ == "__main__":
     main()
