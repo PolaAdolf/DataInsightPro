@@ -496,8 +496,7 @@ def perform_predictive_analytics(df, validation_results):
                                         st.plotly_chart(fig, use_container_width=True)
 
                                 except Exception as e:
-                                    st.warning(f"Could not display feature importance for this model.")
-
+                                    st.warning(f"Could not display feature importance for this model. Error: {e}")
 
                         else: # Regression
                             try:
@@ -603,4 +602,4 @@ def perform_predictive_analytics(df, validation_results):
                                         )
                                         st.plotly_chart(fig, use_container_width=True)
                                 except Exception as e:
-                                    st.warning(f"Could not display feature importance for this model.")
+                                    st.warning(f"Could not display feature importance for this model. Error: {e}")
