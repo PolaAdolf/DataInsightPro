@@ -4,6 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.visualization import create_scatter, create_heatmap, create_correlation_chart, create_box_comparison
+from utils.smart_preprocessor import SmartDataPreprocessor
 from scipy import stats
 
 def perform_diagnostic_analytics(df, validation_results):
@@ -17,43 +18,69 @@ def perform_diagnostic_analytics(df, validation_results):
     validation_results : dict
         Results from data validation including column classifications
     """
-    st.subheader("Correlation Analysis")
+    st.subheader("🔍 Finding Patterns in Your Data")
+    
+    # Add smart recommendations based on data
+    st.markdown("💡 **Smart Suggestion:** Let's explore how different parts of your data connect and influence each other!")
     
     # Correlation analysis for numeric variables
     if len(validation_results['numeric_columns']) > 1:
-        with st.expander("Correlation Between Variables", expanded=True):
-            # Select variables for correlation
-            x_var = st.selectbox(
-                "Select first variable (X):",
-                validation_results['numeric_columns'],
-                key="diag_x_var"
-            )
+        with st.expander("🔗 How Your Number Columns Relate to Each Other", expanded=True):
+            st.markdown("**See if changes in one thing affect another thing in your data**")
             
-            y_var = st.selectbox(
-                "Select second variable (Y):",
-                [col for col in validation_results['numeric_columns'] if col != x_var],
-                key="diag_y_var"
-            )
+            # Add customization options
+            col1, col2, col3 = st.columns([2, 2, 1])
+            
+            with col1:
+                x_var = st.selectbox(
+                    "Choose first column to compare:",
+                    validation_results['numeric_columns'],
+                    key="diag_x_var"
+                )
+            
+            with col2:
+                y_var = st.selectbox(
+                    "Choose second column to compare:",
+                    [col for col in validation_results['numeric_columns'] if col != x_var],
+                    key="diag_y_var"
+                )
+            
+            with col3:
+                scatter_color = st.selectbox(
+                    "Pick chart color:",
+                    ["blue", "red", "green", "purple", "orange"],
+                    key="scatter_color"
+                )
             
             # Calculate correlation
             correlation = df[x_var].corr(df[y_var])
             
-            # Scatter plot with trendline
-            st.write(f"**Correlation between {x_var} and {y_var}:** {correlation:.4f}")
-            
+            # Show relationship strength in user-friendly terms
             if abs(correlation) < 0.3:
                 strength = "weak"
+                strength_emoji = "📌"
+                explanation = "These two things don't really affect each other much."
             elif abs(correlation) < 0.7:
                 strength = "moderate"
+                strength_emoji = "🔗"
+                explanation = "These two things have some connection, but it's not very strong."
             else:
                 strength = "strong"
+                strength_emoji = "💪"
+                explanation = "These two things are closely connected! When one changes, the other usually changes too."
                 
-            direction = "positive" if correlation > 0 else "negative"
+            direction = "move together" if correlation > 0 else "move in opposite directions"
             
-            st.write(f"This indicates a {strength} {direction} relationship.")
+            st.markdown(f"📈 **Connection Strength:** {correlation:.3f}")
+            st.markdown(f"{strength_emoji} **What this means:** {strength.title()} connection - {explanation}")
+            if abs(correlation) > 0.3:
+                st.markdown(f"🔄 **Direction:** When one goes up, the other tends to {'go up too' if correlation > 0 else 'go down'}.")
             
-            # Scatter plot
+            # Scatter plot with customization
             fig = create_scatter(df, x_var, y_var, add_trendline=True)
+            # Apply custom color
+            fig.update_traces(marker_color=scatter_color, marker_size=8)
+            fig.update_layout(title=f"📈 How {x_var} and {y_var} Connect")
             st.plotly_chart(fig, use_container_width=True)
             
             # Statistical test
@@ -84,19 +111,31 @@ def perform_diagnostic_analytics(df, validation_results):
             except:
                 st.warning("Could not perform statistical test due to insufficient or invalid data.")
     else:
-        st.info("At least 2 numeric columns are needed for correlation analysis.")
+        st.info("📊 You need at least 2 number columns to see how they connect. Upload data with multiple number columns to discover relationships!")
     
     # Outlier detection and analysis
-    st.subheader("Outlier Analysis")
+    st.subheader("🔍 Spotting Unusual Values")
     
-    with st.expander("Identify and Analyze Outliers", expanded=True):
+    with st.expander("🚨 Find Values That Don't Fit the Pattern", expanded=True):
+        st.markdown("📝 **What are unusual values?** These are numbers that are very different from most others - they might be errors or special cases worth investigating.")
+        
         if validation_results['numeric_columns']:
-            # Let user select a column for outlier analysis
-            outlier_col = st.selectbox(
-                "Select a column to analyze for outliers:",
-                validation_results['numeric_columns'],
-                key="outlier_column"
-            )
+            # Add customization and explanation
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                outlier_col = st.selectbox(
+                    "Choose a number column to check for unusual values:",
+                    validation_results['numeric_columns'],
+                    key="outlier_column"
+                )
+            
+            with col2:
+                outlier_color = st.selectbox(
+                    "Pick visualization color:",
+                    ["red", "orange", "blue", "purple", "green"],
+                    key="outlier_color"
+                )
             
             # Calculate outlier boundaries using IQR method
             Q1 = df[outlier_col].quantile(0.25)
