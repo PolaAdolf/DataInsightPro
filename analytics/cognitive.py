@@ -4,13 +4,12 @@ import numpy as np
 import plotly.express as px
 import re
 import os
-from openai import OpenAI
+from utils.gemini import (get_gemini_api_key, generate_insights, generate_natural_language_summary, 
+                                generate_executive_summary, generate_key_driver_analysis, generate_text_analysis)
 import json
 import time
 
-def get_openai_api_key():
-    """Get OpenAI API key from environment variable"""
-    return os.getenv("OPENAI_API_KEY")
+# Gemini API key function is now imported from utils.gemini
 
 def perform_cognitive_analytics(df, validation_results):
     """
@@ -26,17 +25,17 @@ def perform_cognitive_analytics(df, validation_results):
     st.subheader("AI-Powered Insights")
     
     # Check if API key exists
-    api_key = get_openai_api_key()
+    api_key = get_gemini_api_key()
     if not api_key:
-        st.error("OpenAI API key not found. Please add it to your environment variables.")
+        st.error("Gemini API key not found. Please add it to your environment variables.")
         
-        with st.expander("How to add OpenAI API key"):
+        with st.expander("How to add Gemini API key"):
             st.markdown("""
-            To use cognitive analytics features, you need an OpenAI API key:
+            To use cognitive analytics features, you need a Gemini API key:
             
-            1. Sign up for an account at [OpenAI](https://platform.openai.com)
+            1. Sign up for an account at [Google AI Studio](https://ai.google.dev/)
             2. Create an API key in your account dashboard
-            3. Add the API key to your environment variables as OPENAI_API_KEY
+            3. Add the API key to your environment variables as GEMINI_API_KEY
             
             This will enable AI-generated insights and analysis.
             """)
@@ -70,7 +69,7 @@ def perform_cognitive_analytics(df, validation_results):
         
         if st.button("Generate Insights", key="gen_insights_btn"):
             with st.spinner("Analyzing data and generating insights..."):
-                insights = generate_ai_insights(dataset_description, "general")
+                insights = generate_insights(dataset_description, "general")
                 
                 if insights:
                     st.success("Analysis complete!")
@@ -104,7 +103,7 @@ def perform_cognitive_analytics(df, validation_results):
         
         if st.button("Ask Question", key="ask_btn") and question:
             with st.spinner("Analyzing your question..."):
-                answer = generate_ai_insights(dataset_description, question)
+                answer = generate_insights(dataset_description, question)
                 
                 if answer:
                     st.success("Analysis complete!")
@@ -130,7 +129,7 @@ def perform_cognitive_analytics(df, validation_results):
             
         if st.button("Generate Summary", key="summary_btn"):
             with st.spinner("Generating natural language summary..."):
-                summary = generate_natural_language_summary(df, validation_results, dataset_description)
+                summary = generate_natural_language_summary(dataset_description)
                 
                 if summary:
                     st.success("Summary generated!")
@@ -156,7 +155,7 @@ def perform_cognitive_analytics(df, validation_results):
             
         if st.button("Generate Executive Summary", key="exec_summary_btn"):
             with st.spinner("Generating executive summary..."):
-                exec_summary = generate_executive_summary(df, validation_results, dataset_description)
+                exec_summary = generate_executive_summary(dataset_description)
                 
                 if exec_summary:
                     st.success("Executive summary generated!")
@@ -202,7 +201,7 @@ def perform_cognitive_analytics(df, validation_results):
                     full_desc = dataset_description + target_desc
                     
                     # Generate key driver analysis
-                    driver_analysis = generate_key_driver_analysis(df, target_variable, driver_vars, full_desc)
+                    driver_analysis = perform_key_driver_analysis(df, target_variable, driver_vars, full_desc)
                     
                     if driver_analysis:
                         st.success("Key driver analysis complete!")
@@ -407,216 +406,15 @@ def generate_dataset_description(df, validation_results):
     
     return description
 
-def generate_ai_insights(dataset_description, question_type):
-    """
-    Generate AI insights based on the dataset description
-    
-    Parameters:
-    -----------
-    dataset_description : str
-        Detailed description of the dataset
-    question_type : str
-        Type of insights to generate (general or custom question)
-    
-    Returns:
-    --------
-    str : Generated insights or None if error
-    """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Prepare prompt based on question type
-        if question_type == "general":
-            prompt = f"""
-            You are a data analytics expert. Based on the following dataset description, 
-            identify key insights, patterns, and recommendations.
-            
-            DATASET DESCRIPTION:
-            {dataset_description}
-            
-            Please provide a comprehensive analysis that includes:
-            1. Key patterns and trends identified in the data
-            2. Notable relationships between variables
-            3. Potential anomalies or areas of concern
-            4. Business implications of these findings
-            5. Specific, actionable recommendations based on the data
-            
-            Format your response in markdown with clear headings and bullet points.
-            """
-        else:
-            # Custom question
-            prompt = f"""
-            You are a data analytics expert. Based on the following dataset description, 
-            answer this specific question:
-            
-            QUESTION:
-            {question_type}
-            
-            DATASET DESCRIPTION:
-            {dataset_description}
-            
-            Provide a thorough, data-driven answer that includes:
-            1. Direct response to the question based on the dataset
-            2. Supporting evidence from the data
-            3. Any relevant context or caveats
-            4. Actionable recommendations where appropriate
-            
-            Format your response in markdown with clear headings and bullet points.
-            """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a data analytics expert providing insights from data analysis."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800
-        )
-        
-        # Return the generated insights
-        return response.choices[0].message.content
-    
-    except Exception as e:
-        st.error(f"Error generating AI insights: {str(e)}")
-        return None
+# generate_insights function is now imported from utils.gemini
 
-def generate_natural_language_summary(df, validation_results, dataset_description):
-    """
-    Generate a natural language summary of the dataset
-    
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        The dataset to summarize
-    validation_results : dict
-        Results from data validation including column classifications
-    dataset_description : str
-        Pregenerated dataset description
-    
-    Returns:
-    --------
-    str : Natural language summary or None if error
-    """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Enhance dataset description with specific request
-        prompt = f"""
-        You are a data analytics expert specializing in creating clear, natural language summaries.
-        Please create a comprehensive narrative summary of this dataset.
-        
-        DATASET DESCRIPTION:
-        {dataset_description}
-        
-        Your natural language summary should:
-        1. Describe the dataset in plain language that a non-technical person could understand
-        2. Explain key distributions, central tendencies, and patterns
-        3. Highlight relationships between variables
-        4. Note any interesting outliers or anomalies
-        5. Explain what the data represents in a business or real-world context
-        
-        Format your response in markdown with clear paragraphs. Use a conversational, 
-        narrative style rather than bullet points.
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a data analytics expert creating clear, narrative summaries of data."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000
-        )
-        
-        # Return the generated summary
-        return response.choices[0].message.content
-    
-    except Exception as e:
-        st.error(f"Error generating natural language summary: {str(e)}")
-        return None
+# generate_natural_language_summary function is now imported from utils.gemini
 
-def generate_executive_summary(df, validation_results, dataset_description):
-    """
-    Generate an executive summary of the dataset
-    
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        The dataset to summarize
-    validation_results : dict
-        Results from data validation including column classifications
-    dataset_description : str
-        Pregenerated dataset description
-    
-    Returns:
-    --------
-    str : Executive summary or None if error
-    """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Prepare prompt for executive summary
-        prompt = f"""
-        You are a senior business analyst creating an executive summary for C-level executives.
-        Based on the following dataset analysis, provide a concise, business-focused executive summary.
-        
-        DATASET DESCRIPTION:
-        {dataset_description}
-        
-        Your executive summary should:
-        1. Begin with a brief overview of what the data represents (1-2 sentences)
-        2. Highlight 3-5 key findings with clear business implications
-        3. Identify critical metrics and their performance
-        4. Provide 3-4 specific, actionable recommendations
-        5. Suggest next steps or areas for further investigation
-        
-        Format your response in markdown. Use clear, concise language appropriate for busy executives.
-        Focus on business impact rather than technical details. Keep the entire summary under 500 words.
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a senior business analyst creating executive summaries for C-level executives."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=700
-        )
-        
-        # Return the generated executive summary
-        return response.choices[0].message.content
-    
-    except Exception as e:
-        st.error(f"Error generating executive summary: {str(e)}")
-        return None
+# generate_executive_summary function is now imported from utils.gemini
 
-def generate_key_driver_analysis(df, target_variable, driver_variables, dataset_description):
+def perform_key_driver_analysis(df, target_variable, driver_variables, dataset_description):
     """
-    Generate a key driver analysis for the target variable
+    Perform key driver analysis and call Gemini for insights
     
     Parameters:
     -----------
@@ -633,10 +431,6 @@ def generate_key_driver_analysis(df, target_variable, driver_variables, dataset_
     --------
     str : Key driver analysis or None if error
     """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
     try:
         # Calculate correlations for numeric variables
         corr_data = []
@@ -654,107 +448,11 @@ def generate_key_driver_analysis(df, target_variable, driver_variables, dataset_
         # Prepare correlation information
         correlation_info = "\n".join(corr_data)
         
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Prepare prompt for key driver analysis
-        prompt = f"""
-        You are a data science expert specializing in key driver analysis.
-        Please analyze what factors most influence the target variable.
-        
-        TARGET VARIABLE: {target_variable}
-        
-        POTENTIAL DRIVER VARIABLES:
-        {', '.join(driver_variables)}
-        
-        CORRELATION WITH TARGET (for numeric variables):
-        {correlation_info}
-        
-        DATASET DESCRIPTION:
-        {dataset_description}
-        
-        Your key driver analysis should:
-        1. Identify the top 3-5 variables that most strongly influence the target
-        2. Explain the nature and direction of each relationship
-        3. Provide business interpretation of why these drivers matter
-        4. Suggest specific actions that could be taken based on these drivers
-        5. Note any potential confounding factors or limitations
-        
-        Format your response in markdown with clear headings and sections.
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a data science expert specializing in key driver analysis."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800
-        )
-        
-        # Return the generated key driver analysis
-        return response.choices[0].message.content
+        # Call Gemini key driver analysis
+        return generate_key_driver_analysis(target_variable, driver_variables, correlation_info, dataset_description)
     
     except Exception as e:
         st.error(f"Error generating key driver analysis: {str(e)}")
         return None
 
-def generate_text_analysis(text_description):
-    """
-    Generate an analysis of text data
-    
-    Parameters:
-    -----------
-    text_description : str
-        Description of the text data to analyze
-    
-    Returns:
-    --------
-    str : Text analysis or None if error
-    """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Prepare prompt for text analysis
-        prompt = f"""
-        You are a text analytics expert specializing in sentiment analysis and theme extraction.
-        Please analyze the following text data.
-        
-        {text_description}
-        
-        Your text analysis should include:
-        1. Overall sentiment assessment (positive, negative, neutral) with explanation
-        2. Key themes and topics identified, with examples
-        3. Frequently occurring terms and their context
-        4. Any notable patterns or trends
-        5. Business implications and recommendations based on this analysis
-        
-        Format your response in markdown with clear headings and sections.
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a text analytics expert specializing in sentiment analysis and theme extraction."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800
-        )
-        
-        # Return the generated text analysis
-        return response.choices[0].message.content
-    
-    except Exception as e:
-        st.error(f"Error generating text analysis: {str(e)}")
-        return None
+# generate_text_analysis function is now imported from utils.gemini
