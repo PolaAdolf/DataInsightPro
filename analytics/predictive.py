@@ -382,8 +382,8 @@ def perform_predictive_analytics(df, validation_results):
                                         'Model': name,
                                         'Accuracy': f"{result['accuracy']:.1%}",
                                         'Performance': "🌟 Excellent" if result['accuracy'] > 0.9 else 
-                                                        "👍 Good" if result['accuracy'] > 0.7 else 
-                                                        "👌 Fair" if result['accuracy'] > 0.5 else "📈 Needs Work"
+                                                             "👍 Good" if result['accuracy'] > 0.7 else 
+                                                             "👌 Fair" if result['accuracy'] > 0.5 else "📈 Needs Work"
                                     })
                                 else:
                                     comparison_data.append({
@@ -391,8 +391,8 @@ def perform_predictive_analytics(df, validation_results):
                                         'R² Score': f"{result['r2']:.3f}",
                                         'RMSE': f"{result['rmse']:.3f}",
                                         'Performance': "🌟 Excellent" if result['r2'] > 0.8 else 
-                                                        "👍 Good" if result['r2'] > 0.6 else 
-                                                        "👌 Fair" if result['r2'] > 0.4 else "📈 Needs Work"
+                                                             "👍 Good" if result['r2'] > 0.6 else 
+                                                             "👌 Fair" if result['r2'] > 0.4 else "📈 Needs Work"
                                     })
 
                             comparison_df = pd.DataFrame(comparison_data)
@@ -463,39 +463,43 @@ def perform_predictive_analytics(df, validation_results):
                                 st.info("📊 Confusion matrix couldn't be generated, but accuracy metrics above show model performance.")
 
                             # Feature importance
-                            if model_type == "Advanced":
+                            if model_type in ["🎯 Advanced Traditional", "🌳 Decision Trees", "📊 All Models Comparison"]:
                                 try:
-                                    importances = pipeline.named_steps['model'].feature_importances_
+                                    # Get feature importances if the model has them
+                                    if hasattr(pipeline.named_steps['model'], 'feature_importances_'):
+                                        importances = pipeline.named_steps['model'].feature_importances_
 
-                                    # Get feature names after preprocessing
-                                    if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
-                                        feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
-                                    else:
-                                        feature_names = [f"Feature {i}" for i in range(len(importances))]
+                                        # Get feature names after preprocessing
+                                        if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
+                                            feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
+                                        else:
+                                            feature_names = [f"Feature {i}" for i in range(len(importances))]
 
-                                    # Create feature importance df
-                                    importance_df = pd.DataFrame({
-                                        'Feature': feature_names,
-                                        'Importance': importances
-                                    }).sort_values('Importance', ascending=False)
+                                        # Create feature importance df
+                                        importance_df = pd.DataFrame({
+                                            'Feature': feature_names,
+                                            'Importance': importances
+                                        }).sort_values('Importance', ascending=False)
 
-                                    st.write("**Feature Importance:**")
+                                        st.write("**Feature Importance:**")
 
-                                    # Visualize feature importance
-                                    fig = px.bar(
-                                        importance_df.head(10),
-                                        x='Importance',
-                                        y='Feature',
-                                        orientation='h',
-                                        title="Top 10 Feature Importance",
-                                        color='Importance',
-                                        color_continuous_scale='Viridis'
-                                    )
-                                    st.plotly_chart(fig, use_container_width=True)
+                                        # Visualize feature importance
+                                        fig = px.bar(
+                                            importance_df.head(10),
+                                            x='Importance',
+                                            y='Feature',
+                                            orientation='h',
+                                            title="Top 10 Feature Importance",
+                                            color='Importance',
+                                            color_continuous_scale='Viridis'
+                                        )
+                                        st.plotly_chart(fig, use_container_width=True)
+
                                 except Exception as e:
-                                    pass
+                                    st.warning(f"Could not display feature importance for this model.")
 
-                        else:
+
+                        else: # Regression
                             try:
                                 # Regression metrics
                                 mse = mean_squared_error(y_test, y_pred)
@@ -538,13 +542,13 @@ def perform_predictive_analytics(df, validation_results):
                                 mse = rmse = r2 = 0
 
                             # Plot actual vs predicted
-                            pred_df = pd.DataFrame({
+                            pred_df_plot = pd.DataFrame({
                                 'Actual': y_test,
                                 'Predicted': y_pred
                             })
 
                             fig = px.scatter(
-                                pred_df,
+                                pred_df_plot,
                                 x='Actual',
                                 y='Predicted',
                                 title=f"Actual vs Predicted {target_var}",
@@ -552,8 +556,8 @@ def perform_predictive_analytics(df, validation_results):
                             )
 
                             # Add 45-degree line
-                            min_val = min(pred_df['Actual'].min(), pred_df['Predicted'].min())
-                            max_val = max(pred_df['Actual'].max(), pred_df['Predicted'].max())
+                            min_val = min(pred_df_plot['Actual'].min(), pred_df_plot['Predicted'].min())
+                            max_val = max(pred_df_plot['Actual'].max(), pred_df_plot['Predicted'].max())
 
                             fig.add_trace(
                                 go.Scatter(
@@ -564,56 +568,39 @@ def perform_predictive_analytics(df, validation_results):
                                     line=dict(color='red', dash='dash')
                                 )
                             )
-
                             st.plotly_chart(fig, use_container_width=True)
-
+                            
                             # Feature importance for Random Forest
-                            if model_type == "Advanced":
+                            if model_type in ["🎯 Advanced Traditional", "🌳 Decision Trees", "📊 All Models Comparison"]:
                                 try:
-                                    importances = pipeline.named_steps['model'].feature_importances_
-                                    
-                                    # Get feature names after preprocessing
-                                    if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
-                                        feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
-                                    else:
-                                        feature_names = [f"Feature {i}" for i in range(len(importances))]
-                                    
-                                    # Create feature importance df
-                                    importance_df = pd.DataFrame({
-                                        'Feature': feature_names,
-                                        'Importance': importances
-                                    }).sort_values('Importance', ascending=False)
-                                    
-                                    st.write("**Feature Importance:**")
-                                    
-                                    # Visualize feature importance
-                                    fig = px.bar(
-                                        importance_df.head(10),
-                                        x='Importance',
-                                        y='Feature',
-                                        orientation='h',
-                                        title="Top 10 Feature Importance",
-                                        color='Importance',
-                                        color_continuous_scale='Viridis'
-                                    )
-                                    st.plotly_chart(fig, use_container_width=True)
+                                    # Get feature importances if the model has them
+                                    if hasattr(pipeline.named_steps['model'], 'feature_importances_'):
+                                        importances = pipeline.named_steps['model'].feature_importances_
+                                        
+                                        # Get feature names after preprocessing
+                                        if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
+                                            feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
+                                        else:
+                                            feature_names = [f"Feature {i}" for i in range(len(importances))]
+                                        
+                                        # Create feature importance df
+                                        importance_df = pd.DataFrame({
+                                            'Feature': feature_names,
+                                            'Importance': importances
+                                        }).sort_values('Importance', ascending=False)
+                                        
+                                        st.write("**Feature Importance:**")
+                                        
+                                        # Visualize feature importance
+                                        fig = px.bar(
+                                            importance_df.head(10),
+                                            x='Importance',
+                                            y='Feature',
+                                            orientation='h',
+                                            title="Top 10 Feature Importance",
+                                            color='Importance',
+                                            color_continuous_scale='Viridis'
+                                        )
+                                        st.plotly_chart(fig, use_container_width=True)
                                 except Exception as e:
-                                    pass
-
-    # The rest of the code for "What-if Analysis" and "Time Series Forecasting" needs to be completed and properly indented here.
-    # The original error was because the code ended abruptly. I am providing a fix for the part you provided.
-    
-    # Adding the incomplete section from your code with proper indentation to avoid the original error.
-    st.markdown("### 🔍 What-if Analysis & Live Prediction")
-    st.info("💡 **Adjust the feature values below to see how the model's prediction changes!**")
-    
-    what_if_values = {}
-    for feature in selected_features:
-        if feature in pred_df.select_dtypes(include=np.number).columns:
-            min_val = pred_df[feature].min()
-            max_val = pred_df[feature].max()
-            mean_val = pred_df[feature].mean()
-            what_if_values[feature] = st.slider(f"Value for {feature}", min_val, max_val, float(mean_val))
-        elif feature in pred_df.select_dtypes(include='object').columns:
-            # Here is where the original error was. The line below is now correctly indented.
-            what_if_values[feature] = st.selectbox(f"Value for {feature}", pred_df[feature].unique())
+                                    st.warning(f"Could not display feature importance for this model.")
