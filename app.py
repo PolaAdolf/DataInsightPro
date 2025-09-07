@@ -13,7 +13,7 @@ from analytics.cognitive import perform_cognitive_analytics
 from utils.work_plan import generate_work_plan
 
 st.set_page_config(
-    page_title="Comprehensive Data Analytics Platform",
+    page_title="Smart Data Explorer",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -73,8 +73,8 @@ def main():
     """, unsafe_allow_html=True)
     
     # Application header with responsive design
-    st.title("Comprehensive Data Analytics Platform")
-    st.markdown("<p style='margin-bottom: 1rem;'>Upload your data and get insights across five analytics dimensions</p>", unsafe_allow_html=True)
+    st.title("📊 Smart Data Explorer")
+    st.markdown("<p style='margin-bottom: 1rem;'>Upload your data and discover valuable insights with easy-to-understand analysis</p>", unsafe_allow_html=True)
     
     # Sidebar for navigation with improved styling
     with st.sidebar:
@@ -84,12 +84,12 @@ def main():
         if st.session_state.file_uploaded and st.session_state.validation_results['is_valid']:
             tabs = {
                 "upload": "📂 Upload Data",
-                "descriptive": "📊 Descriptive Analytics",
-                "diagnostic": "🔍 Diagnostic Analytics",
-                "predictive": "🔮 Predictive Analytics",
-                "prescriptive": "🧠 Prescriptive Analytics",
-                "cognitive": "💡 Cognitive Analytics",
-                "work_plan": "📋 Work Plan"
+                "descriptive": "📊 Data Summary",
+                "diagnostic": "🔍 Find Patterns",
+                "predictive": "🔮 Future Predictions",
+                "prescriptive": "💡 Smart Recommendations",
+                "cognitive": "🤖 AI Insights",
+                "work_plan": "📋 Action Plan"
             }
         else:
             tabs = {"upload": "📂 Upload Data"}
@@ -165,16 +165,16 @@ def render_upload_tab():
         with st.container():
             st.markdown("""
             <div style="padding: 1rem; border-radius: 0.5rem; background-color: #f8f9fa; margin-bottom: 1rem;">
-            <h3 style="margin-top: 0;">📊 Data Analytics Platform</h3>
-            <p>This platform enables you to perform five types of analytics on your data:</p>
+            <h3 style="margin-top: 0;">📊 Smart Data Explorer</h3>
+            <p>Discover what your data is telling you with five easy analysis types:</p>
             <ul>
-                <li><strong>Descriptive Analytics:</strong> What happened?</li>
-                <li><strong>Diagnostic Analytics:</strong> Why did it happen?</li>
-                <li><strong>Predictive Analytics:</strong> What might happen?</li>
-                <li><strong>Prescriptive Analytics:</strong> What should be done?</li>
-                <li><strong>Cognitive Analytics:</strong> AI-powered insights</li>
+                <li><strong>📊 Data Summary:</strong> See what's in your data</li>
+                <li><strong>🔍 Find Patterns:</strong> Understand connections in your data</li>
+                <li><strong>🔮 Future Predictions:</strong> See what might happen next</li>
+                <li><strong>💡 Smart Recommendations:</strong> Get suggestions on what to do</li>
+                <li><strong>🤖 AI Insights:</strong> Let AI explain your data in simple terms</li>
             </ul>
-            <p>Plus a Work Plan Generator to implement findings.</p>
+            <p>Plus an Action Plan to help you implement what you discover.</p>
             </div>
             """, unsafe_allow_html=True)
     
@@ -214,24 +214,24 @@ def render_upload_tab():
                     st.metric("Columns", df.shape[1])
                 
                 with col2:
-                    st.metric("Numeric Features", len(st.session_state.validation_results['numeric_columns']))
-                    st.metric("Categorical Features", len(st.session_state.validation_results['categorical_columns']))
+                    st.metric("Number Columns", len(st.session_state.validation_results['numeric_columns']))
+                    st.metric("Category Columns", len(st.session_state.validation_results['categorical_columns']))
                 
                 with col3:
-                    st.metric("Date Features", len(st.session_state.validation_results['date_columns']))
+                    st.metric("Date Columns", len(st.session_state.validation_results['date_columns']))
                     missing_pct = df.isna().sum().sum() / (df.shape[0] * df.shape[1]) * 100
-                    st.metric("Missing Values", f"{missing_pct:.2f}%")
+                    st.metric("Empty Cells", f"{missing_pct:.2f}%")
                 
                 # Information about data types
                 with st.expander("Data Types Information"):
                     st.write(f"**Data Types:** {', '.join(df.dtypes.astype(str).unique())}")
                     
                     if st.session_state.validation_results['numeric_columns']:
-                        st.write("**Numeric Columns:**")
+                        st.write("**Number Columns (for calculations):**")
                         st.write(", ".join(st.session_state.validation_results['numeric_columns']))
                     
                     if st.session_state.validation_results['categorical_columns']:
-                        st.write("**Categorical Columns:**")
+                        st.write("**Category Columns (groups/labels):**")
                         st.write(", ".join(st.session_state.validation_results['categorical_columns']))
                     
                     if st.session_state.validation_results['date_columns']:
@@ -244,7 +244,7 @@ def render_upload_tab():
                 
                 # Proceed to analytics button - make it stand out
                 st.markdown("<div style='padding: 1rem 0;'></div>", unsafe_allow_html=True)
-                if st.button("✨ Proceed to Analytics", key="proceed_btn", type="primary"):
+                if st.button("✨ Start Exploring Your Data", key="proceed_btn", type="primary"):
                     st.session_state.current_tab = "descriptive"
                     st.rerun()
             else:
@@ -280,17 +280,17 @@ def render_upload_tab():
                 st.button("Try Again", key="try_again_btn")
 
 def render_descriptive_tab():
-    st.header("📊 Descriptive Analytics")
+    st.header("📊 Data Summary")
     
-    with st.expander("What is Descriptive Analytics?"):
+    with st.expander("What is Data Summary?"):
         st.markdown("""
-        **Descriptive Analytics** summarizes historical data to provide insights about what has happened. It includes:
-        - Statistical summaries (mean, median, mode, etc.)
-        - Distribution analysis
-        - Pattern identification in historical data
-        - Data visualization of past trends
+        **Data Summary** shows you what's in your data in an easy-to-understand way. It includes:
+        - Basic calculations (average, middle value, highest, lowest)
+        - Charts showing how your data is spread out
+        - Visual patterns in your information
+        - Trends over time if you have dates
         
-        This type of analytics answers the question: **"What happened?"**
+        This section answers: **"What does my data look like?"**
         """)
     
     if st.session_state.data is not None:
@@ -319,17 +319,17 @@ def render_descriptive_tab():
             st.rerun()
 
 def render_diagnostic_tab():
-    st.header("🔍 Diagnostic Analytics")
+    st.header("🔍 Find Patterns")
     
-    with st.expander("What is Diagnostic Analytics?"):
+    with st.expander("What is Find Patterns?"):
         st.markdown("""
-        **Diagnostic Analytics** examines data to understand why something happened. It includes:
-        - Correlation analysis
-        - Anomaly detection
-        - Root cause identification
-        - Comparative analysis
+        **Find Patterns** helps you understand connections and relationships in your data. It includes:
+        - How different pieces of data relate to each other
+        - Spotting unusual values or outliers
+        - Finding what causes changes in your data
+        - Comparing different groups or categories
         
-        This type of analytics answers the question: **"Why did it happen?"**
+        This section answers: **"How are things connected in my data?"**
         """)
     
     if st.session_state.data is not None:
@@ -358,17 +358,17 @@ def render_diagnostic_tab():
             st.rerun()
 
 def render_predictive_tab():
-    st.header("🔮 Predictive Analytics")
+    st.header("🔮 Future Predictions")
     
-    with st.expander("What is Predictive Analytics?"):
+    with st.expander("What is Future Predictions?"):
         st.markdown("""
-        **Predictive Analytics** uses statistical algorithms and machine learning to predict future outcomes. It includes:
-        - Forecasting future values
-        - Trend projections
-        - Risk assessment
-        - Opportunity identification
+        **Future Predictions** uses smart computer methods to guess what might happen next. It includes:
+        - Predicting future numbers based on past data
+        - Showing where trends are heading
+        - Identifying potential risks and opportunities
+        - Estimating future outcomes
         
-        This type of analytics answers the question: **"What might happen in the future?"**
+        This section answers: **"What might happen in the future based on my data?"**
         """)
     
     if st.session_state.data is not None:
@@ -397,17 +397,17 @@ def render_predictive_tab():
             st.rerun()
 
 def render_prescriptive_tab():
-    st.header("🧠 Prescriptive Analytics")
+    st.header("💡 Smart Recommendations")
     
-    with st.expander("What is Prescriptive Analytics?"):
+    with st.expander("What are Smart Recommendations?"):
         st.markdown("""
-        **Prescriptive Analytics** suggests actions to take based on insights from the data. It includes:
-        - Action recommendations
-        - Decision support
-        - Optimization strategies
-        - Scenario analysis
+        **Smart Recommendations** suggests specific actions you can take based on what your data shows. It includes:
+        - Clear steps you can take to improve things
+        - Help with making better decisions
+        - Ways to get better results
+        - Testing different scenarios
         
-        This type of analytics answers the question: **"What should be done?"**
+        This section answers: **"What should I do based on what my data shows?"**
         """)
     
     if st.session_state.data is not None:
@@ -436,17 +436,17 @@ def render_prescriptive_tab():
             st.rerun()
 
 def render_cognitive_tab():
-    st.header("💡 Cognitive Analytics")
+    st.header("🤖 AI Insights")
     
-    with st.expander("What is Cognitive Analytics?"):
+    with st.expander("What are AI Insights?"):
         st.markdown("""
-        **Cognitive Analytics** leverages AI and natural language processing to generate human-like insights. It includes:
-        - Natural language summaries
-        - AI-generated insights
-        - Pattern recognition
-        - Context-aware analysis
+        **AI Insights** uses artificial intelligence to explain your data in plain English. It includes:
+        - Summaries written like a human would explain them
+        - Smart observations about your data
+        - Automatic pattern spotting
+        - Easy-to-understand explanations
         
-        This type of analytics answers the question: **"What does this data tell us in human terms?"**
+        This section answers: **"What does my data mean in simple, everyday language?"**
         """)
     
     if st.session_state.data is not None:
@@ -475,17 +475,17 @@ def render_cognitive_tab():
             st.rerun()
 
 def render_work_plan_tab():
-    st.header("📋 Work Plan Generator")
+    st.header("📋 Action Plan")
     
-    with st.expander("What is the Work Plan Generator?"):
+    with st.expander("What is the Action Plan?"):
         st.markdown("""
-        The **Work Plan Generator** creates a time-based implementation roadmap based on the insights from all analytics. It includes:
-        - Prioritized action items
-        - Time estimates
-        - Resource requirements
-        - Implementation suggestions
+        The **Action Plan** creates a step-by-step plan based on everything you've discovered about your data. It includes:
+        - List of things to do in order of importance
+        - How long each step might take
+        - What resources you'll need
+        - Practical steps you can actually take
         
-        This helps you turn insights into actionable steps.
+        This helps you turn your data discoveries into real actions.
         """)
     
     if st.session_state.data is not None:
