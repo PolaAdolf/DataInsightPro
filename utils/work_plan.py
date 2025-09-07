@@ -4,14 +4,12 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import os
-from openai import OpenAI
+from utils.gemini import generate_work_plan as generate_gemini_work_plan, get_gemini_api_key
 import json
 import re
 from datetime import datetime, timedelta
 
-def get_openai_api_key():
-    """Get OpenAI API key from environment variable"""
-    return os.getenv("OPENAI_API_KEY")
+# Gemini API key function is now imported from utils.gemini
 
 def generate_work_plan(df, validation_results):
     """
@@ -74,15 +72,15 @@ def generate_work_plan(df, validation_results):
     # Generate the work plan
     if st.button("Generate Work Plan", key="gen_plan_btn"):
         # Verify API key
-        api_key = get_openai_api_key()
+        api_key = get_gemini_api_key()
         if not api_key:
-            st.error("OpenAI API key not found. Please add it to your environment variables.")
+            st.error("Gemini API key not found. Please add it to your environment variables.")
             return
         
         with st.spinner("Generating comprehensive work plan..."):
             try:
                 # Generate work plan with AI
-                work_plan = generate_ai_work_plan(data_summary, plan_focus, timeline, context)
+                work_plan = generate_gemini_work_plan(data_summary, plan_focus, timeline, context)
                 
                 if work_plan:
                     display_work_plan(work_plan, timeline)
@@ -162,141 +160,8 @@ def create_data_summary(df, validation_results):
     
     return summary
 
-def generate_ai_work_plan(data_summary, plan_focus, timeline, context):
-    """
-    Generate a work plan using AI
-    
-    Parameters:
-    -----------
-    data_summary : str
-        Summary of the dataset
-    plan_focus : str
-        Focus area for the work plan
-    timeline : str
-        Implementation timeline
-    context : str
-        Additional context or specific goals
-    
-    Returns:
-    --------
-    str or None : Generated work plan or None if error
-    """
-    api_key = get_openai_api_key()
-    if not api_key:
-        return None
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Determine timeline in months
-        if "Short-term" in timeline:
-            months = 3
-        elif "Medium-term" in timeline:
-            months = 6
-        else:  # Long-term
-            months = 12
-        
-        # Create prompt
-        prompt = f"""
-        You are a senior business consultant creating a detailed work implementation plan.
-        
-        DATA SUMMARY:
-        {data_summary}
-        
-        PLAN FOCUS: {plan_focus}
-        TIMELINE: {timeline} ({months} months)
-        ADDITIONAL CONTEXT: {context if context else 'No additional context provided.'}
-        
-        Create a comprehensive work plan that includes:
-        
-        1. Executive Summary: A brief overview of the plan's goals and expected outcomes
-        
-        2. Phases of Implementation: Break down the {months}-month timeline into logical phases with specific goals for each phase
-        
-        3. Detailed Task List: For each phase, list specific tasks with:
-           - Task description
-           - Estimated duration (in days or weeks)
-           - Required resources or skills
-           - Dependencies on other tasks
-           - Priority level (High, Medium, Low)
-        
-        4. Key Performance Indicators (KPIs): 3-5 specific metrics to track progress and success
-        
-        5. Risk Assessment: Identify potential risks and mitigation strategies
-        
-        6. Resource Requirements: Specify team roles, tools, and budget considerations
-        
-        Format your response in JSON with the following structure:
-        {{
-            "executive_summary": "summary text",
-            "phases": [
-                {{
-                    "name": "Phase 1: [Phase Name]",
-                    "description": "phase description",
-                    "start_month": 1,
-                    "end_month": 2,
-                    "tasks": [
-                        {{
-                            "name": "Task name",
-                            "description": "task description",
-                            "duration": "X weeks",
-                            "resources": "required resources",
-                            "dependencies": "dependencies or None",
-                            "priority": "High/Medium/Low"
-                        }},
-                        ...more tasks
-                    ]
-                }},
-                ...more phases
-            ],
-            "kpis": [
-                {{
-                    "name": "KPI name",
-                    "description": "description",
-                    "target": "target value or improvement"
-                }},
-                ...more KPIs
-            ],
-            "risks": [
-                {{
-                    "risk": "risk description",
-                    "impact": "High/Medium/Low",
-                    "mitigation": "mitigation strategy"
-                }},
-                ...more risks
-            ],
-            "resources": [
-                {{
-                    "role": "role name",
-                    "responsibilities": "description of responsibilities",
-                    "required_skills": "required skills"
-                }},
-                ...more roles
-            ]
-        }}
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a senior business consultant creating detailed implementation plans."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"},
-            max_tokens=1500
-        )
-        
-        # Parse the JSON response
-        work_plan = json.loads(response.choices[0].message.content)
-        return work_plan
-    
-    except Exception as e:
-        st.error(f"Error generating AI work plan: {str(e)}")
-        return None
+# generate_work_plan function is now imported from utils.gemini as generate_gemini_work_plan
+# Function is now using Gemini via imported generate_gemini_work_plan
 
 def display_work_plan(work_plan, timeline):
     """
