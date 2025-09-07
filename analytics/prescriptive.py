@@ -9,75 +9,13 @@ from sklearn.preprocessing import StandardScaler
 from scipy.optimize import linprog
 import itertools
 import os
-from openai import OpenAI
+from utils.gemini import generate_prescriptive_insights, get_gemini_api_key
 import time
 import re
 
-def get_openai_api_key():
-    """Get OpenAI API key from environment variable"""
-    return os.getenv("OPENAI_API_KEY")
+# Gemini API key function is now imported from utils.gemini
 
-def generate_openai_insights(data_description, question):
-    """
-    Generate insights using OpenAI API
-    
-    Parameters:
-    -----------
-    data_description : str
-        Description of the data
-    question : str
-        The specific question to ask
-        
-    Returns:
-    --------
-    str : The generated insights
-    """
-    # Check if API key is available
-    api_key = get_openai_api_key()
-    if not api_key:
-        return "OpenAI API key not found. Please add it to your environment variables."
-    
-    try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Create prompt
-        prompt = f"""
-        You are a data analytics expert. Based on the following data description, 
-        provide specific, actionable recommendations.
-        
-        DATA DESCRIPTION:
-        {data_description}
-        
-        QUESTION:
-        {question}
-        
-        Your response should:
-        1. Include 3-5 specific, data-driven recommendations
-        2. For each recommendation, explain the rationale based on the data
-        3. Suggest how to implement each recommendation
-        4. Include potential impact or expected outcomes
-        
-        Format your response in bullet points and use business language.
-        """
-        
-        # Call OpenAI API
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a data analytics expert providing specific, actionable business recommendations based on data analysis."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800
-        )
-        
-        # Return the generated text
-        return response.choices[0].message.content
-    
-    except Exception as e:
-        return f"Error generating insights: {str(e)}"
+# generate_prescriptive_insights function is now imported from utils.gemini
 
 def perform_prescriptive_analytics(df, validation_results):
     """
@@ -129,7 +67,7 @@ def perform_prescriptive_analytics(df, validation_results):
                             scaled_data = scaler.fit_transform(cluster_data)
                             
                             # Perform KMeans clustering
-                            kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+                            kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
                             clusters = kmeans.fit_predict(scaled_data)
                             
                             # Add cluster labels to original data
@@ -273,7 +211,7 @@ def perform_prescriptive_analytics(df, validation_results):
                             question = "Based on the segment profiles described above, what specific actions should be taken for each segment? Provide segment-specific recommendations and strategies."
                             
                             with st.spinner("Generating AI recommendations..."):
-                                ai_insights = generate_openai_insights(segment_description, question)
+                                ai_insights = generate_prescriptive_insights(segment_description, question)
                                 st.markdown(ai_insights)
                             
                             # Download segment data
@@ -462,7 +400,7 @@ def perform_prescriptive_analytics(df, validation_results):
                                             question = f"Based on the optimization results above, what specific actions should be taken to implement this resource allocation? Provide practical implementation steps and expected benefits."
                                             
                                             with st.spinner("Generating implementation recommendations..."):
-                                                ai_insights = generate_openai_insights(optimization_description, question)
+                                                ai_insights = generate_prescriptive_insights(optimization_description, question)
                                                 st.markdown(ai_insights)
                                         else:
                                             st.error(f"Optimization failed: {result.message}")
@@ -723,7 +661,7 @@ def perform_prescriptive_analytics(df, validation_results):
                                         question = f"Based on the what-if analysis results above, what specific actions should be taken? Evaluate both scenarios and recommend which one is better and why. Also suggest how to implement the recommended scenario."
                                         
                                         with st.spinner("Generating scenario recommendations..."):
-                                            ai_insights = generate_openai_insights(scenario_description, question)
+                                            ai_insights = generate_prescriptive_insights(scenario_description, question)
                                             st.markdown(ai_insights)
                                     except Exception as e:
                                         st.error(f"Error in scenario calculation: {str(e)}")
