@@ -3,14 +3,14 @@ import pandas as pd
 import os
 import numpy as np
 import time
-from utils.data_loader import load_data
-from utils.data_validator import validate_data
-from analytics.descriptive import perform_descriptive_analytics
-from analytics.diagnostic import perform_diagnostic_analytics
-from analytics.predictive import perform_predictive_analytics
-from analytics.prescriptive import perform_prescriptive_analytics
-from analytics.cognitive import perform_cognitive_analytics
-from utils.work_plan import generate_work_plan
+from data_loader import load_data
+from data_validator import validate_data
+from descriptive import perform_descriptive_analytics
+from diagnostic import perform_diagnostic_analytics
+from predictive import perform_predictive_analytics
+from prescriptive import perform_prescriptive_analytics
+from cognitive import perform_cognitive_analytics
+from work_plan import generate_work_plan
 
 st.set_page_config(
     page_title="Smart Data Explorer",
