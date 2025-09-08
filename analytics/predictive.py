@@ -164,6 +164,7 @@ def perform_predictive_analytics(df, validation_results):
                 key="test_size"
             ) / 100
 
+            model_type = st.selectbox
             model_type = st.selectbox(
                 "Choose your AI model approach:",
                 ["🚀 Beginner-Friendly", "🎯 Advanced Traditional", "🧠 Deep Learning (Neural Networks)", "🌳 Decision Trees", "📊 All Models Comparison"],
@@ -381,18 +382,18 @@ def perform_predictive_analytics(df, validation_results):
                                     comparison_data.append({
                                         'Model': name,
                                         'Accuracy': f"{result['accuracy']:.1%}",
-                                        'Performance': "🌟 Excellent" if result['accuracy'] > 0.9 else 
-                                                             "👍 Good" if result['accuracy'] > 0.7 else 
-                                                             "👌 Fair" if result['accuracy'] > 0.5 else "📈 Needs Work"
+                                        'Performance': "🌟 Excellent" if result['accuracy'] > 0.9 else
+                                                     "👍 Good" if result['accuracy'] > 0.7 else
+                                                     "👌 Fair" if result['accuracy'] > 0.5 else "📈 Needs Work"
                                     })
                                 else:
                                     comparison_data.append({
                                         'Model': name,
                                         'R² Score': f"{result['r2']:.3f}",
                                         'RMSE': f"{result['rmse']:.3f}",
-                                        'Performance': "🌟 Excellent" if result['r2'] > 0.8 else 
-                                                             "👍 Good" if result['r2'] > 0.6 else 
-                                                             "👌 Fair" if result['r2'] > 0.4 else "📈 Needs Work"
+                                        'Performance': "🌟 Excellent" if result['r2'] > 0.8 else
+                                                     "👍 Good" if result['r2'] > 0.6 else
+                                                     "👌 Fair" if result['r2'] > 0.4 else "📈 Needs Work"
                                     })
 
                             comparison_df = pd.DataFrame(comparison_data)
@@ -463,42 +464,38 @@ def perform_predictive_analytics(df, validation_results):
                                 st.info("📊 Confusion matrix couldn't be generated, but accuracy metrics above show model performance.")
 
                             # Feature importance
-                            if model_type in ["🎯 Advanced Traditional", "🌳 Decision Trees", "📊 All Models Comparison"]:
+                            if model_type == "Advanced": # Assuming Advanced model type is used for feature importance
                                 try:
-                                    # Get feature importances if the model has them
-                                    if hasattr(pipeline.named_steps['model'], 'feature_importances_'):
-                                        importances = pipeline.named_steps['model'].feature_importances_
+                                    importances = pipeline.named_steps['model'].feature_importances_
 
-                                        # Get feature names after preprocessing
-                                        if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
-                                            feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
-                                        else:
-                                            feature_names = [f"Feature {i}" for i in range(len(importances))]
+                                    # Get feature names after preprocessing
+                                    if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
+                                        feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
+                                    else:
+                                        feature_names = [f"Feature {i}" for i in range(len(importances))]
 
-                                        # Create feature importance df
-                                        importance_df = pd.DataFrame({
-                                            'Feature': feature_names,
-                                            'Importance': importances
-                                        }).sort_values('Importance', ascending=False)
+                                    # Create feature importance df
+                                    importance_df = pd.DataFrame({
+                                        'Feature': feature_names,
+                                        'Importance': importances
+                                    }).sort_values('Importance', ascending=False)
 
-                                        st.write("**Feature Importance:**")
+                                    st.write("**Feature Importance:**")
 
-                                        # Visualize feature importance
-                                        fig = px.bar(
-                                            importance_df.head(10),
-                                            x='Importance',
-                                            y='Feature',
-                                            orientation='h',
-                                            title="Top 10 Feature Importance",
-                                            color='Importance',
-                                            color_continuous_scale='Viridis'
-                                        )
-                                        st.plotly_chart(fig, use_container_width=True)
-
+                                    # Visualize feature importance
+                                    fig = px.bar(
+                                        importance_df.head(10),
+                                        x='Importance',
+                                        y='Feature',
+                                        orientation='h',
+                                        title="Top 10 Feature Importance",
+                                        color='Importance',
+                                        color_continuous_scale='Viridis'
+                                    )
+                                    st.plotly_chart(fig, use_container_width=True)
                                 except Exception as e:
-                                    st.warning(f"Could not display feature importance for this model. Error: {e}")
-
-                        else: # Regression
+                                     st.warning(f"Could not compute feature importance: {str(e)}")
+                        else:
                             try:
                                 # Regression metrics
                                 mse = mean_squared_error(y_test, y_pred)
@@ -541,13 +538,13 @@ def perform_predictive_analytics(df, validation_results):
                                 mse = rmse = r2 = 0
 
                             # Plot actual vs predicted
-                            pred_df_plot = pd.DataFrame({
+                            pred_df = pd.DataFrame({
                                 'Actual': y_test,
                                 'Predicted': y_pred
                             })
 
                             fig = px.scatter(
-                                pred_df_plot,
+                                pred_df,
                                 x='Actual',
                                 y='Predicted',
                                 title=f"Actual vs Predicted {target_var}",
@@ -555,8 +552,8 @@ def perform_predictive_analytics(df, validation_results):
                             )
 
                             # Add 45-degree line
-                            min_val = min(pred_df_plot['Actual'].min(), pred_df_plot['Predicted'].min())
-                            max_val = max(pred_df_plot['Actual'].max(), pred_df_plot['Predicted'].max())
+                            min_val = min(pred_df['Actual'].min(), pred_df['Predicted'].min())
+                            max_val = max(pred_df['Actual'].max(), pred_df['Predicted'].max())
 
                             fig.add_trace(
                                 go.Scatter(
@@ -567,39 +564,461 @@ def perform_predictive_analytics(df, validation_results):
                                     line=dict(color='red', dash='dash')
                                 )
                             )
+
                             st.plotly_chart(fig, use_container_width=True)
-                            
+
                             # Feature importance for Random Forest
-                            if model_type in ["🎯 Advanced Traditional", "🌳 Decision Trees", "📊 All Models Comparison"]:
+                            if model_type == "Advanced": # Assuming Advanced model type is used for feature importance
                                 try:
-                                    # Get feature importances if the model has them
-                                    if hasattr(pipeline.named_steps['model'], 'feature_importances_'):
-                                        importances = pipeline.named_steps['model'].feature_importances_
-                                        
-                                        # Get feature names after preprocessing
-                                        if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
-                                            feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
-                                        else:
-                                            feature_names = [f"Feature {i}" for i in range(len(importances))]
-                                        
-                                        # Create feature importance df
-                                        importance_df = pd.DataFrame({
-                                            'Feature': feature_names,
-                                            'Importance': importances
-                                        }).sort_values('Importance', ascending=False)
-                                        
-                                        st.write("**Feature Importance:**")
-                                        
-                                        # Visualize feature importance
-                                        fig = px.bar(
-                                            importance_df.head(10),
-                                            x='Importance',
-                                            y='Feature',
-                                            orientation='h',
-                                            title="Top 10 Feature Importance",
-                                            color='Importance',
-                                            color_continuous_scale='Viridis'
-                                        )
-                                        st.plotly_chart(fig, use_container_width=True)
+                                    importances = pipeline.named_steps['model'].feature_importances_
+
+                                    # Get feature names after preprocessing
+                                    if hasattr(pipeline.named_steps['preprocessor'], 'get_feature_names_out'):
+                                        feature_names = pipeline.named_steps['preprocessor'].get_feature_names_out()
+                                    else:
+                                        feature_names = [f"Feature {i}" for i in range(len(importances))]
+
+                                    # Create feature importance df
+                                    importance_df = pd.DataFrame({
+                                        'Feature': feature_names,
+                                        'Importance': importances
+                                    }).sort_values('Importance', ascending=False)
+
+                                    st.write("**Feature Importance:**")
+
+                                    # Visualize feature importance
+                                    fig = px.bar(
+                                        importance_df.head(10),
+                                        x='Importance',
+                                        y='Feature',
+                                        orientation='h',
+                                        title="Top 10 Feature Importance",
+                                        color='Importance',
+                                        color_continuous_scale='Viridis'
+                                    )
+                                    st.plotly_chart(fig, use_container_width=True)
                                 except Exception as e:
-                                    st.warning(f"Could not display feature importance for this model. Error: {e}")
+                                    st.warning(f"Could not compute feature importance: {str(e)}")
+
+
+                        # Model insights with error handling
+                        st.write("🔍 **What This Model Tells You:**")
+
+                        try:
+                            if is_classification and 'accuracy' in locals():
+                                st.markdown(f"""
+                                ✅ **Summary:** This model can predict **{target_var}** correctly **{accuracy:.1%}** of the time
+
+                                📊 **Training Details:**
+                                - Used {len(X_train)} examples to learn patterns
+                                - Tested on {len(X_test)} new examples to verify accuracy
+                                - Model type: {model_name}
+
+                                💡 **Business Impact:**
+                                {"This is excellent for making reliable predictions!" if accuracy > 0.8 else
+                                 "This gives you good guidance, but verify important decisions." if accuracy > 0.6 else
+                                 "Use this for initial insights, but collect more data for better accuracy."}
+                                """)
+                            elif not is_classification and 'r2' in locals():
+                                st.markdown(f"""
+                                ✅ **Summary:** This model explains **{r2*100:.1f}%** of what drives **{target_var}**
+
+                                📊 **Training Details:**
+                                - Used {len(X_train)} examples to learn patterns
+                                - Tested on {len(X_test)} new examples to verify accuracy
+                                - Typical prediction error: ±{rmse:.2f}
+                                - Model type: {model_name}
+
+                                💡 **Business Impact:**
+                                {"Great! You can confidently use this for forecasting and planning." if r2 > 0.7 else
+                                 "Good for understanding trends, but be cautious with precise predictions." if r2 > 0.5 else
+                                 "Shows some patterns, but consider collecting more relevant data."}
+                                """)
+                        except Exception as e:
+                            st.markdown("✅ **Summary:** Model training completed successfully! You can now use it to make predictions on new data.")
+
+                        # What-if analysis with error handling
+                        st.write("🎮 **Try Different Scenarios:**")
+                        st.write("Adjust the values below to see how predictions change:")
+
+                        # Create feature sliders for numeric, dropdowns for categorical
+                        what_if_values = {}
+
+                        # Use columns for better layout
+                        cols = st.columns(2)
+                        col_idx = 0
+
+                        try:
+                            for feature in selected_features[:6]:  # Limit to first 6 features for UI
+                                with cols[col_idx % 2]:
+                                    if feature in validation_results['numeric_columns']:
+                                        # Numeric slider with safe defaults
+                                        try:
+                                            min_val = float(pred_df[feature].min())
+                                            max_val = float(pred_df[feature].max())
+
+                                            if min_val == max_val:  # Handle case where all values are the same
+                                                what_if_values[feature] = min_val
+                                                st.write(f"**{feature}:** {min_val:.2f} (constant value)")
+                                            else:
+                                                step = (max_val - min_val) / 100 if (max_val - min_val) > 0 else 1
+                                                default_val = float(pred_df[feature].mean())
+
+                                                what_if_values[feature] = st.slider(
+                                                    f"🔢 {feature}:",
+                                                    min_value=min_val,
+                                                    max_value=max_val,
+                                                    value=default_val,
+                                                    step=max(step, 0.01),
+                                                    key=f"whatif_{feature}"
+                                                )
+                                        except Exception as e:
+                                            # Default to mean if slider fails
+                                            what_if_values[feature] = float(pred_df[feature].mean())
+                                            st.write(f"**{feature}:** Using average value ({what_if_values[feature]:.2f})")
+
+                                    elif feature in validation_results['categorical_columns']:
+                                        # Categorical dropdown
+                                        try:
+                                            options = pred_df[feature].dropna().unique()
+                                            if len(options) > 0:
+                                                default_val = pred_df[feature].mode()[0] if len(pred_df[feature].mode()) > 0 else options[0]
+
+                                                what_if_values[feature] = st.selectbox(
+                                                    f"🏷️ {feature}:",
+                                                    options=options,
+                                                    index=list(options).index(default_val) if default_val in options else 0,
+                                                    key=f"whatif_cat_{feature}"
+                                                )
+                                            else:
+                                                what_if_values[feature] = None
+                                                st.write(f"**{feature}:** No valid options available")
+                                        except Exception as e:
+                                            what_if_values[feature] = None
+                                            st.write(f"**{feature}:** Using default value")
+
+                                    col_idx += 1
+
+                            # Make prediction with what-if values
+                            if st.button("🔮 Make Prediction", key="make_prediction"):
+                                try:
+                                    # Create input for prediction
+                                    input_data = pd.DataFrame([what_if_values])
+
+                                    # Make prediction
+                                    prediction = pipeline.predict(input_data)[0]
+
+                                    if is_classification:
+                                        # Get prediction probabilities if available
+                                        if hasattr(pipeline, 'predict_proba'):
+                                            try:
+                                                proba = pipeline.predict_proba(input_data)[0]
+                                                max_proba = max(proba)
+                                                st.success(f"🎯 **Prediction:** {prediction}")
+                                                st.info(f"🎲 **Confidence:** {max_proba:.1%}")
+                                            except:
+                                                st.success(f"🎯 **Prediction:** {prediction}")
+                                        else:
+                                            st.success(f"🎯 **Prediction:** {prediction}")
+                                    else:
+                                        st.success(f"🎯 **Predicted Value:** {prediction:.2f}")
+
+                                        # Add context about the prediction
+                                        actual_min = y_test.min() if 'y_test' in locals() else pred_df[target_var].min()
+                                        actual_max = y_test.max() if 'y_test' in locals() else pred_df[target_var].max()
+
+                                        if prediction < actual_min:
+                                            st.info("📉 This prediction is lower than any value in your training data")
+                                        elif prediction > actual_max:
+                                            st.info("📈 This prediction is higher than any value in your training data")
+                                        else:
+                                            st.info("✅ This prediction falls within the expected range of your data")
+
+                                except Exception as e:
+                                    st.error("😅 Couldn't make prediction with these values. Try adjusting the inputs or check your data format.")
+
+                        except Exception as e:
+                            st.info("💡 What-if analysis isn't available for this dataset. This might be due to data format issues.")
+
+                except Exception as e:
+                    st.error(f"Error during model training: {str(e)}")
+    else:  # Time Series Forecasting
+        if not validation_results['date_columns']:
+            st.error("No date columns found. Time series forecasting requires a date column.")
+            return
+
+        if not validation_results['numeric_columns']:
+            st.error("No numeric columns found. Time series forecasting requires a numeric target.")
+            return
+
+        with st.expander("Time Series Forecasting", expanded=True):
+            # Step 1: Select date column
+            date_col = st.selectbox(
+                "Select date column:",
+                validation_results['date_columns'],
+                key="ts_date_col"
+            )
+
+            # Step 2: Select target column
+            target_col = st.selectbox(
+                "Select target column to forecast:",
+                validation_results['numeric_columns'],
+                key="ts_target_col"
+            )
+
+            # Step 3: Set forecast horizon
+            forecast_periods = st.slider(
+                "Number of periods to forecast:",
+                min_value=1,
+                max_value=30,
+                value=5,
+                key="forecast_periods"
+            )
+
+            # Step 4: Select model
+            model_type = st.selectbox(
+                "Select forecasting model:",
+                ["ARIMA", "XGBoost"],
+                key="ts_model_type"
+            )
+
+            # Step 5: Generate forecast
+            if st.button("Generate Forecast", key="forecast_btn"):
+                try:
+                    with st.spinner("Generating forecast..."):
+                        # Prepare time series data
+                        ts_df = pred_df[[date_col, target_col]].copy()
+
+                        # Ensure date column is datetime
+                        ts_df[date_col] = pd.to_datetime(ts_df[date_col])
+
+                        # Sort by date
+                        ts_df = ts_df.sort_values(date_col)
+
+                        # Set date as index
+                        ts_df = ts_df.set_index(date_col)
+
+                        # Drop missing values
+                        ts_df = ts_df.dropna()
+
+                        # Resample to ensure regular time series
+                        # Detect frequency
+                        if len(ts_df) > 1:
+                            # Try to infer frequency
+                            inferred_freq = pd.infer_freq(ts_df.index)
+
+                            if inferred_freq is None:
+                                # Try common frequencies
+                                for freq in ['D', 'W', 'M', 'Q', 'Y']:
+                                    try:
+                                        ts_df = ts_df.resample(freq).mean()
+                                        break
+                                    except:
+                                        continue
+
+                                # If still no valid frequency, use daily
+                                if inferred_freq is None:
+                                    st.warning("Could not detect time series frequency. Using daily frequency.")
+                                    ts_df = ts_df.resample('D').mean()
+                            else:
+                                ts_df = ts_df.resample(inferred_freq).mean()
+
+                        # Fill missing values in resampled data
+                        ts_df = ts_df.fillna(method='ffill').fillna(method='bfill')
+
+                        # Ensure we have enough data
+                        if len(ts_df) < max(5, forecast_periods):
+                            st.error(f"Not enough data points for forecasting. Need at least {max(5, forecast_periods)}.")
+                            return
+
+                        # Generate forecast
+                        if model_type == "ARIMA":
+                            # Train ARIMA model
+                            arima_order = (1, 1, 1)  # Default order
+
+                            # Create model
+                            model = ARIMA(ts_df[target_col], order=arima_order)
+                            model_fit = model.fit()
+
+                            # Make forecast
+                            forecast = model_fit.forecast(steps=forecast_periods)
+
+                            # Create forecast dataframe
+                            last_date = ts_df.index[-1]
+                            forecast_dates = pd.date_range(start=last_date, periods=forecast_periods + 1, freq=ts_df.index.freq)[1:]
+
+                            forecast_df = pd.DataFrame({
+                                date_col: forecast_dates,
+                                target_col: forecast,
+                                'type': 'Forecast'
+                            })
+
+                            historical_df = pd.DataFrame({
+                                date_col: ts_df.index,
+                                target_col: ts_df[target_col],
+                                'type': 'Historical'
+                            })
+
+                            # Combine historical and forecast
+                            result_df = pd.concat([historical_df, forecast_df])
+
+                        else:  # XGBoost
+                            # Create lagged features
+                            max_lag = min(5, len(ts_df) // 5)
+
+                            # Create features with lag values
+                            for lag in range(1, max_lag + 1):
+                                ts_df[f'lag_{lag}'] = ts_df[target_col].shift(lag)
+
+                            # Drop rows with NaN from lagging
+                            lag_df = ts_df.dropna()
+
+                            # Prepare train data
+                            X = lag_df.drop(columns=[target_col])
+                            y = lag_df[target_col]
+
+                            # Train XGBoost model
+                            model = xgb.XGBRegressor(objective='reg:squarederror')
+                            model.fit(X, y)
+
+                            # Generate future values
+                            future_df = pd.DataFrame()
+                            last_values = ts_df.tail(max_lag)[target_col].values
+
+                            # Last known date
+                            last_date = ts_df.index[-1]
+                            forecast_dates = pd.date_range(start=last_date, periods=forecast_periods + 1, freq=ts_df.index.freq)[1:]
+
+                            # Make forecasts one step at a time
+                            forecasts = []
+
+                            for _ in range(forecast_periods):
+                                # Create feature row
+                                features = {}
+                                for i in range(1, max_lag + 1):
+                                    features[f'lag_{i}'] = last_values[-i]
+
+                                # Make prediction
+                                prediction = model.predict(pd.DataFrame([features]))[0]
+                                forecasts.append(prediction)
+
+                                # Update last values
+                                last_values = np.append(last_values, prediction)
+                                last_values = last_values[1:]
+
+                            # Create forecast dataframe
+                            forecast_df = pd.DataFrame({
+                                date_col: forecast_dates,
+                                target_col: forecasts,
+                                'type': 'Forecast'
+                            })
+
+                            historical_df = pd.DataFrame({
+                                date_col: ts_df.index,
+                                target_col: ts_df[target_col],
+                                'type': 'Historical'
+                            })
+
+                            # Combine historical and forecast
+                            result_df = pd.concat([historical_df, forecast_df])
+
+                        # Visualize forecast
+                        st.write(f"**Time Series Forecast for {target_col}**")
+
+                        fig = px.line(
+                            result_df,
+                            x=date_col,
+                            y=target_col,
+                            color='type',
+                            title=f"Time Series Forecast for {target_col}",
+                            color_discrete_map={'Historical': 'blue', 'Forecast': 'red'}
+                        )
+
+                        # Add range to forecast
+                        if model_type == "ARIMA":
+                            # Add confidence intervals
+                            conf_int = model_fit.get_forecast(steps=forecast_periods).conf_int()
+                            lower_bound = conf_int.iloc[:, 0]
+                            upper_bound = conf_int.iloc[:, 1]
+
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=forecast_dates,
+                                    y=upper_bound,
+                                    fill=None,
+                                    mode='lines',
+                                    line_color='rgba(255,0,0,0.2)',
+                                    name='Upper Bound'
+                                )
+                            )
+
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=forecast_dates,
+                                    y=lower_bound,
+                                    fill='tonexty',
+                                    mode='lines',
+                                    line_color='rgba(255,0,0,0.2)',
+                                    name='Lower Bound'
+                                )
+                            )
+
+                        st.plotly_chart(fig, use_container_width=True)
+
+                        # Display forecast values
+                        st.write("**Forecast Values:**")
+                        forecast_table = forecast_df[[date_col, target_col]].copy()
+                        forecast_table[target_col] = forecast_table[target_col].round(2)
+                        st.dataframe(forecast_table)
+
+                        # Calculate forecast statistics
+                        last_historical = historical_df[target_col].iloc[-1]
+                        first_forecast = forecast_df[target_col].iloc[0]
+                        last_forecast = forecast_df[target_col].iloc[-1]
+
+                        # Calculate changes
+                        immediate_change = first_forecast - last_historical
+                        immediate_pct_change = (immediate_change / last_historical) * 100 if last_historical != 0 else 0
+
+                        total_change = last_forecast - last_historical
+                        total_pct_change = (total_change / last_historical) * 100 if last_historical != 0 else 0
+
+                        # Display forecast insights
+                        st.write("**Forecast Insights:**")
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+                            st.metric(
+                                "Immediate Forecast Change",
+                                f"{immediate_change:.2f}",
+                                delta=f"{immediate_pct_change:.2f}%"
+                            )
+
+                            st.write(f"Latest actual value: {last_historical:.2f}")
+                            st.write(f"First forecast value: {first_forecast:.2f}")
+
+                        with col2:
+                            st.metric(
+                                f"Total Change after {forecast_periods} periods",
+                                f"{total_change:.2f}",
+                                delta=f"{total_pct_change:.2f}%"
+                            )
+
+                            avg_forecast = forecast_df[target_col].mean()
+                            st.write(f"Average forecast value: {avg_forecast:.2f}")
+                            st.write(f"Last forecast value: {last_forecast:.2f}")
+
+                        # Trend direction
+                        forecast_direction = "increasing" if total_change > 0 else "decreasing" if total_change < 0 else "stable"
+
+                        # Forecast summary
+                        st.info(f"""
+                        **Forecast Summary:**
+                        The {model_type} model predicts that {target_col} will be {forecast_direction} over the next {forecast_periods} periods.
+                        The model forecasts a change from {last_historical:.2f} to {last_forecast:.2f},
+                        representing a {abs(total_pct_change):.2f}% {"increase" if total_pct_change > 0 else "decrease"}.
+                        """)
+
+                except Exception as e:
+                    st.error(f"Error during forecasting: {str(e)}")
