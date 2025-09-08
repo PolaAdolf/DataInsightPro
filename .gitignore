@@ -1,10 +1,6 @@
-
 __pycache__/
 *.py[cod]
 *$py.class
 .env
 .streamlit/secrets.toml
 .DS_Store
-**/node_modules/
-**/.env
-.uv/
